@@ -1,0 +1,192 @@
+# OUTPUT: travisci_out_kdoc
+
+# 指定语言环境
+language: python
+# 指定需要sudo权限
+sudo: required
+# 指定python版本
+python: 
+  - 3.7.4
+# 指定缓存模块，可选。缓存可加快编译速度。
+#cache:
+#  directories:
+#    - node_modules
+
+# 指定doc启动分支
+branches:
+  only:
+    - dev 
+
+# 一行一个build,一个build中的环境变量要写在一行，一个意思。
+env:
+  - T_DIR_TROOTNAME_SRC=$T_DIR_TROOTNAME_SRC T_DIR_BASE_SRC=$TRAVIS_BUILD_DIR/$T_DIR_TROOTNAME_SRC $T_DIR_CLONE_BASE=/tmp/klclone T_DIR_TEMPLATE=$T_DIR_CLONE_BASE/kdoc/003work/000tools/002makefiles/001pandoc/linux/templates
+
+before_install:
+
+# Start: Build Lifecycle
+install:
+#
+  - sudo apt-get install ttf-wqy-microhei  #文泉驿-微米黑
+  - sudo apt-get install ttf-wqy-zenhei  #文泉驿-正黑
+#  - sudo apt-get install xfonts-wqy #文泉驿-点阵宋体
+
+# 安装windows字体
+  - sudo mkdir -p /tmp/wf
+  - sudo git clone -b master https://github.com/kevinluolog/wf.git /tmp/wf
+
+  - sudo mkdir -p /usr/share/fonts/windows
+  - sudo find /tmp/wf -type f |grep -E "*.otf|*.ttf|*.TTF|*.ttc"
+  - sudo find /tmp/wf -type f |grep -E "*.otf|*.ttf|*.TTF|*.ttc" | xargs sudo cp -fv -t /usr/share/fonts/windows 
+
+# 使mkfontscale和mkfontdir命令正常运行
+  - sudo apt-get install ttf-mscorefonts-installer
+# 使fc-cache命令正常运行
+  - sudo apt-get install fontconfig
+
+# 修改字体文件的权限，使root用户以外的用户也可以使用
+  - cd /usr/share/fonts
+  - sudo chmod --help
+#  - sudo chmod -R windows 755
+  - cd $TRAVIS_BUILD_DIR
+
+# 重新建立字体索引文件
+  - sudo mkfontscale
+  - sudo mkfontdir
+# 更新字体缓存
+  - sudo fc-cache
+
+#查看系统中已安装的中文字体
+  - sudo cat /etc/fonts/fonts.conf
+  - fc-list --help
+  - fc-list -f "%{family}\n" :lang=zh > zhfont.txt
+  - cat zhfont.txt
+
+#  - fc-list > allfont.txt
+#  - cat allfont.txt
+
+  - sudo apt-get install texlive-full
+
+# texlive & texlive-xetex & texlive-xetex-extra（转换为pdf）
+# 使用xelatex这个引擎为Pandoc提供pdf转换中文支持，Ubuntu12.04.5LTS需要 texlive-xetex texlive-latex-extra 这两个包，安装这两个包需要添加 texlive-backports/ppa 这个库。
+#`ppa源:texlive-backports:sudo add-apt-repository ppa:texlive-backports/ppa -y  <https://launchpad.net/~grand-edgemaster/+archive/ubuntu/texlive-backports>`__
+#  - sudo apt-get install python-software-properties #这个在Travis下是不需要的
+#  - sudo add-apt-repository ppa:texlive-backports/ppa -y
+#  - sudo apt-get clean
+#  - sudo apt-get update -y
+#  - sudo apt-get install texlive-math-extra texlive-science texlive-bibtex-extra texlive-fonts-extra texlive-fonts-recommended texlive-metapost texlive-pictures texlive-xetex texlive-latex-extra latexmk fonts-sil-gentiumplus texlive-lang-all texlive-lang-cjk  lmodern jadetex -y
+#  - sudo apt-get install texlive-math-extra texlive-science texlive-bibtex-extra texlive-fonts-extra texlive-fonts-recommended texlive-metapost texlive-pictures texlive-xetex texlive-latex-extra latexmk fonts-sil-gentiumplus texlive-lang-all texlive-lang-cjk  lmodern jadetex -y
+
+# `ppa源:texlive-2019:sudo add-apt-repository ppa:jonathonf/texlive-2019/ppa -y  <https://launchpad.net/~jonathonf/+archive/ubuntu/texlive-2019>`__
+#  - sudo add-apt-repository ppa:jonathonf/texlive-2019 -y
+#  - sudo apt-get clean
+#  - sudo apt-get update -y
+#  - sudo apt-get install texlive-full -y
+
+# install sphinx
+#  - apt-get install python3-sphinx
+  - pip install Sphinx
+
+# pandoc （提供基本转换环境）
+# 针对Ubuntu12.04,5下安装pandoc如果使用cabal处理依赖关系总是出现版本不符合的问题，不知道如何解决，反而直接下载 deb包 来安装却非常简单，适合travis-ci虚拟机环境
+#  - wget https://github.com/jgm/pandoc/releases/download/1.17.1/pandoc-1.17.1-2-amd64.deb
+  - wget https://github.com/jgm/pandoc/releases/download/2.7.3/pandoc-2.7.3-1-amd64.deb
+  - sudo dpkg -i pandoc-2.7.3-1-amd64.deb
+
+
+script:
+  - sudo cat /etc/fonts/fonts.conf
+  - fc-list :lang=zh-cn
+  - fc-list -f "%{family}\n" :lang=zh > zhfont.txt
+  - cat zhfont.txt
+#   - git ls-files | xargs -I{} bash -c 'touch "{}" --date=$(git log -n1 --pretty=format:%ct -- "{}")'
+#  - git ls-files | xargs -I{} bash -c 'touch "{}" --date=@$(git log -n1 --pretty=format:%ct -- "{}")'
+#  - git checkout dev -f --with-timestamps
+#  - echo $TRAVIS_BUILD_DIR
+  - echo $T_DIR_BASE_SRC
+#  - mkdir -p output/$T_DIR_TROOTNAME_SRC
+#  - mkdir -p output/copy2
+#  - ls
+
+#clone0 : kdoc
+  - mkdir -p $T_DIR_CLONE_BASE/kdoc
+# 注意：如果直接显式指明clone目标目录，则一定要把repo名字写上，不然不会自动加上;如果省略,则会自动创建repo名的目录，然后clone进这个目录
+# <directory>The name of a new directory to clone into. The "humanish" part of the source repository is used if no directory is explicitly given (repo for /path/to/repo.git and foo for host.xz:foo/.git). Cloning into an existing directory is only allowed if the directory is empty  #- git clone -b gh-pages https://$GH_TOKEN_FULL@github.com/kevinluolog/gp-memo.git /tmp/klgit/gp-memo
+  - git clone -b dev https://$GH_TOKEN_FULL@github.com/kevinluolog/kdoc.git $T_DIR_CLONE_BASE/kdoc
+
+
+ 
+#1. $T_DIR_TROOTNAME_SRC： H:\tmp_H\001.work\002git\009ktran\$T_DIR_TROOTNAME_SRC
+
+#1.1 pandoc:
+
+#1.1.2 .rst转换成 格式.html $T_DIR_TROOTNAME_SRC pandoc
+  - make startconv -f $T_DIR_CLONE_BASE/kdoc/003work/000tools/002makefiles/001pandoc/linux/Makefile DIR_BASE_SRC=$T_DIR_BASE_SRC DIR_BASE_OBJ=$T_DIR_CLONE_BASE/output/pandoc/html/$T_DIR_TROOTNAME_SRC DIR_BASE_COPYTO= SUFFIX_FROM=.rst SUFFIX_TO=.html 
+
+#1.1.3 .rst转换成 格式.pdf $T_DIR_TROOTNAME_SRC pandoc
+# x.x.x的数字编号含义如下：
+# (1.$T_DIR_TROOTNAME_SRC|2.$T_DIR_TROOTNAME_SRC).(1.pandoc|2.sphinx).(1..rst2html|2..rst2hexomd|3..rst2pdf)
+#1.1.3 .rst转换成 格式.pdf $T_DIR_TROOTNAME_SRC pandoc
+  - make startconv -f $T_DIR_CLONE_BASE/kdoc/003work/000tools/002makefiles/001pandoc/linux/Makefile DIR_BASE_SRC=$T_DIR_BASE_SRC DIR_BASE_OBJ=$T_DIR_CLONE_BASE/output/pandoc/pdf/$T_DIR_TROOTNAME_SRC DIR_BASE_COPYTO= SUFFIX_FROM=.rst SUFFIX_TO=.pdf DIR_TEMPLATE=$T_DIR_TEMPLATE
+
+#1.2 sphinx:
+
+#1.2.1 sphinx: .rst转换成 格式.html $T_DIR_TROOTNAME_SRC sphinx
+# sphinx-build -b html sourcedir builddir
+  - sphinx-build -b html $T_DIR_BASE_SRC $T_DIR_CLONE_BASE/output/sphinx/html/build-$T_DIR_TROOTNAME_SRC
+#  - find $T_DIR_CLONE_BASE/output/sphinx/html/build-$T_DIR_TROOTNAME_SRC -maxdepth 1 -type d | grep "[\.]*doctrees$"
+  - find $T_DIR_CLONE_BASE/output/sphinx/html/build-$T_DIR_TROOTNAME_SRC -maxdepth 1 -type d | grep "[\.]*doctrees$" | xargs rm -rfv  
+# rm .buildinfo
+#  - find $T_DIR_CLONE_BASE/output/sphinx/html/build-$T_DIR_TROOTNAME_SRC -maxdepth 1 -type f -name '\.buildinfo'
+  - find $T_DIR_CLONE_BASE/output/sphinx/html/build-$T_DIR_TROOTNAME_SRC -maxdepth 1 -type f -name '\.buildinfo' -exec  rm -fv {} \;
+  
+# 因hexo和jekyll不要处理此类目录，会导致引用不到，所以在根目录要添加.nojekyll文件, 详细请参考 hexo.rst `怎么解决githubpages不能识别下划线开头的目录？`_
+  - touch $T_DIR_CLONE_BASE/output/sphinx/html/build-$T_DIR_TROOTNAME_SRC/.nojekyll
+
+#1.2.2 .rst转换成 格式.pdf $T_DIR_TROOTNAME_SRC sphinx
+#with sphinx
+#`sphinx-build.html <https://www.sphinx-doc.org/en/master/man/sphinx-build.html>`__
+  - sphinx-build -M latexpdf $T_DIR_BASE_SRC $T_DIR_CLONE_BASE/output/sphinx/pdf/build-$T_DIR_TROOTNAME_SRC
+#  find . -type f -name '*.pdf' -exec rm -rf {} \;
+#  (1) "." 表示从当前目录开始递归查找
+#  (2) “ -name '*.pdf' "根据名称来查找，要查找所有以.exe结尾的文件夹或者文件
+#  (3) " -type f "查找的类型为文件
+#  (4) -exec rm -rf {} \; 执行命令，别忘记最后的 \;有空格的。
+#  *.pdf移动到根目录
+  - find $T_DIR_CLONE_BASE/output/sphinx/pdf/build-$T_DIR_TROOTNAME_SRC/latex -type f -name '*.pdf' -exec mv -t $T_DIR_CLONE_BASE/output/sphinx/pdf/build-$T_DIR_TROOTNAME_SRC {} \;
+#  - rmdir $T_DIR_CLONE_BASE/output/sphinx/pdf/build-$T_DIR_TROOTNAME_SRC/doctrees
+#  -type d：表示目录， -maxdepth 1 表示只找一级，必须放在-type之前，grep -E:表示扩展正则， "doctrees|latex":表示正则这两个整体名字， xargs 表示依次作为参数送入后面命令
+# rm doctrees目录
+  - find $T_DIR_CLONE_BASE/output/sphinx/pdf/build-$T_DIR_TROOTNAME_SRC -maxdepth 1 -type d | grep -E "doctrees" | xargs rm -rfv 
+# rm doctrees|latex目录
+#  - find $T_DIR_CLONE_BASE/output/sphinx/pdf/build-$T_DIR_TROOTNAME_SRC -maxdepth 1 -type d | grep -E "doctrees|latex" | xargs rm -rfv 
+
+# 设置git提交名，邮箱；替换真实token到_config.yml文件，最后depoy部署
+after_script:
+#  - git config user.name "kevinluolog"
+#  - git config user.email "kevinluolog_72@163.com"
+  # 替换同目录下的_config.yml文件中gh_token字符串为travis后台刚才配置的变量，注意此处sed命令用了双引号。单引号无效！
+#  - sed -i "s/gh_token/${GH_TOKEN}/g" ./_config.yml
+#  - hexo deploy
+
+#所有输出： ./output 2 kevinluolog/travisci_out_kdoc, all output can gitclone on kevinluolog/travisci_out_kdoc
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GH_TOKEN_FULL  # Set in the settings page of your repository,    as a secure variable
+  keep_history: true
+#  keep_history: false
+  local_dir: $T_DIR_CLONE_BASE/output
+  repo: kevinluolog/travisci_out_006tmp
+  target_branch: output
+  on:
+    branch: dev
+
+notifications:
+  email:
+    recipients:
+      - kevinluolog_72@163.com
+#    on_success: change
+    on_success: always
+    on_failure: always
+
+# End: Build LifeCycle
