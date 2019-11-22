@@ -19,7 +19,7 @@ branches:
 
 # 一行一个build,一个build中的环境变量要写在一行，一个意思。
 env:
-  - T_DIR_TROOTNAME_SRC=006tmp T_DIR_BASE_SRC=$TRAVIS_BUILD_DIR/$T_DIR_TROOTNAME_SRC $T_DIR_CLONE_BASE=/tmp/klclone T_DIR_TEMPLATE=$T_DIR_CLONE_BASE/kdoc/003work/000tools/002makefiles/001pandoc/linux/templates
+  - T_DIR_TROOTNAME_SRC=006tmp T_DIR_BASE_SRC=$TRAVIS_BUILD_DIR/006tmp $T_DIR_CLONE_BASE=/tmp/klclone T_DIR_TEMPLATE=/tmp/klclone/kdoc/003work/000tools/002makefiles/001pandoc/linux/templates
 
 before_install:
 
